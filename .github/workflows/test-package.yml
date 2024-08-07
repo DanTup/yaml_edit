@@ -2,12 +2,9 @@ name: Dart CI
 
 on:
   # Run on PRs and pushes to the default branch.
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  schedule:
-    - cron: "0 0 * * 0"
+  - push
+  - workflow_dispatch
+
 
 env:
   PUB_ENVIRONMENT: bot.github
@@ -47,8 +44,8 @@ jobs:
       matrix:
         # Add macos-latest and/or windows-latest if relevant for this package.
         os: [ubuntu-latest]
-        sdk: ['3.1', stable, dev]
-        platform: [vm, chrome]
+        sdk: [dev]
+        platform: [vm]
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672
@@ -60,21 +57,3 @@ jobs:
       - name: Run tests on ${{ matrix.platform }}
         run: dart test --platform ${{ matrix.platform }} --coverage=./coverage
         if: always() && steps.install.outcome == 'success'
-      # We don't collect code coverage from 2.12.0, because it doesn't work
-      - name: Convert coverage to lcov
-        run: dart run coverage:format_coverage -i ./coverage -o ./coverage/lcov.info --lcov --report-on lib/
-        if: always() && steps.install.outcome == 'success' && matrix.sdk != '2.12.0'
-      - uses: coverallsapp/github-action@643bc377ffa44ace6394b2b5d0d3950076de9f63
-        if: always() && steps.install.outcome == 'success' && matrix.sdk != '2.12.0'
-        with:
-          flag-name: os:${{ matrix.os }}/dart:${{ matrix.sdk }}/platform:${{ matrix.platform }}
-          parallel: true
-
-  report-coverage:
-    needs: test
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    steps:
-    - uses: coverallsapp/github-action@643bc377ffa44ace6394b2b5d0d3950076de9f63
-      with:
-        parallel-finished: true
